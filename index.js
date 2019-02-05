@@ -64,11 +64,34 @@ var apiRoutes = express.Router();
 // authentication (no middleware necessary since this isnt authenticated)
 // ---------------------------------------------------------
 // http://localhost:8080/api/authenticate
-apiRoutes.post("/authenticate", function(req, res) {
+apiRoutes.post("/authenticate", async function (req, res) {
   // find the user
-  // TODO findOne user by name, if no user found: res.json() with this information
-  // TODO if user found, but password is wrong: res.json() with this information
-  // TODO if user is found and password is correct, sign a jwt token and res.json send it back to the client
+  // [ x ] TODO findOne user by name, if no user found: res.json() with this information
+  // [ x ] TODO if user found, but password is wrong: res.json() with this information
+  // [ x ] TODO if user is found and password is correct, sign a jwt token and res.json send it back to the client
+
+  console.log("req.body", req.body);
+  const user = await User.findOne({ name: req.body.name });
+  console.log("user", user);
+  if (!user) {
+    res.json({
+      message: "User not found"
+});
+  } else if (req.body.password !== user.password) {
+    res.json({ message: "password does not match" });
+  } else if (req.body.password === user.password) {
+    jwt.sign({
+      user: `${user.name}`
+    },
+      app.get("superSecret"),
+      function (err, token) {
+        app.get("superSecret");
+        console.log("token", token);
+        res.json({
+          token
+        });
+      });
+  }
 });
 
 // ---------------------------------------------------------
