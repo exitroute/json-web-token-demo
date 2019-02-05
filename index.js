@@ -51,7 +51,7 @@ app.use(morgan("dev"));
 // =================================================================
 
 // basic route (http://localhost:8080)
-app.get("/", function(req, res) {
+app.get("/", function (req, res) {
   res.send("Hello! The API is at http://localhost:" + port + "/api");
 });
 
@@ -76,7 +76,7 @@ apiRoutes.post("/authenticate", async function (req, res) {
   if (!user) {
     res.json({
       message: "User not found"
-});
+    });
   } else if (req.body.password !== user.password) {
     res.json({ message: "password does not match" });
   } else if (req.body.password === user.password) {
@@ -97,30 +97,51 @@ apiRoutes.post("/authenticate", async function (req, res) {
 // ---------------------------------------------------------
 // route middleware to authenticate and check token
 // ---------------------------------------------------------
-apiRoutes.use(function(req, res, next) {
+apiRoutes.use(function (req, res, next) {
   // check header or url parameters or post parameters for token
-  // TODO if no token provided res.status(403)
-  // TODO get the token out of the requests' header
-  // TODO verify the JWT token
+  // [ X ] TODO if no token provided res.status(403)
+  // [ X ] TODO get the token out of the requests' header
+  // [ X ] TODO verify the JWT token
+
+
+  const token = req.headers["x-access-token"];
+  console.log(token);
+  if (!token) {
+    res.status(403).json({ message: "token required" })
+  } else {
+    const cert = app.get("superSecret");
+    // get public key
+    jwt.verify(token, cert, function (err, decoded) {
+      console.log(decoded);
+      if (err) {
+        err = { name: "JsonWebTokenError"};
+        res.json(err);
+      };
+      req.decoded = decoded;
+      next();
+    });
+  }
+
   // TODO append the token to the req.decoded and run next()
 });
 
 // ---------------------------------------------------------
 // authenticated routes
 // ---------------------------------------------------------
-apiRoutes.get("/", function(req, res) {
+apiRoutes.get("/", function (req, res) {
+  console.log("###", req.decoded);
   res.json({
-    message: "Welcome to the coolest API on earth!"
+    message: `Welcome ${req.decoded.user}, to the coolest API on earth!`
   });
 });
 
-apiRoutes.get("/users", function(req, res) {
-  User.find({}, function(err, users) {
+apiRoutes.get("/users", function (req, res) {
+  User.find({}, function (err, users) {
     res.json(users);
   });
 });
 
-apiRoutes.get("/check", function(req, res) {
+apiRoutes.get("/check", function (req, res) {
   res.json(req.decoded);
 });
 
